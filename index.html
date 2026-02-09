@@ -148,7 +148,7 @@
                     no: "不需要",
                     next: "下一步",
                     finish: "完成",
-                    step1_desc: "在这里，您可以将预设商品快速添加到计算列表。稍后可在设置里调整数量，价格和颜色。",
+                    step1_desc: "在这里，您可以将预设商品快速添加到计算列表。稍后可在上方设置中设置个数，价格和颜色。",
                     step2_desc: "计算结果和输入过程会显示在这里。",
                     step3_desc: "使用数字键盘输入任意金额或数量。",
                     step4_desc: "商品选择完成后，点击绿色的“实收”按钮，输入顾客支付的金额，然后点击“=”计算找零。",
@@ -190,10 +190,10 @@
                     no: "いいえ",
                     next: "次へ",
                     finish: "完了",
-                    step1_desc: "ここではプリセット商品をワンタップでリストに追加できます。後で設定画面から価格や色を変更可能です。",
+                    step1_desc: "ここではプリセット商品をワンタップでリストに追加できます。後で設定画面から個数、価格や色を変更可能です。",
                     step2_desc: "計算結果や入力プロセスがここに大きく表示されます。",
                     step3_desc: "テンキーを使って、登録されていない金額や数量を自由に入力できます。",
-                    step4_desc: "商品を選んで終わったら、緑色の「預かり」ボタンを押し、頂いた金額を入力して「=」でお釣りを計算します。",
+                    step4_desc: "商品を選んだら、緑色の「預かり」ボタンを押し、頂いた金額を入力して「=」でお釣りを計算します。",
                     step5_desc: "最後に、ここに表示される黒い「記録」ボタンを押すと、取引が保存され次の会計へ進みます。",
                     step6_desc: "左上のボタンから、これまでの取引履歴を確認したりCSVで保存したりできます。",
                     step7_desc: "右上の設定ボタンから、商品ボタンの数やそれぞれの価格・色を自由にカスタマイズできます。",
@@ -245,28 +245,27 @@
 
         function App() {
           // --- 全局状态 ---
-          const [appState, setAppState] = useState('lang_selection'); // 'lang_selection' | 'tutorial_ask' | 'calculator' | 'setup'
+          const [appState, setAppState] = useState('lang_selection'); 
           const [lang, setLang] = useState('zh');
           
           // チュートリアル状態
           const [tutorialActive, setTutorialActive] = useState(false);
           const [tutorialStep, setTutorialStep] = useState(0);
 
-          // 配置状态：每个商品包含 id, price, colorIdx
+          // 配置状态
           const [customProdCount, setCustomProdCount] = useState(5);
           const [products, setProducts] = useState([
               { id: 0, price: 100, colorIdx: 0 }, 
               { id: 1, price: 200, colorIdx: 1 }, 
-              { id: 2, price: 300, colorIdx: 3 }, // Green
-              { id: 3, price: 400, colorIdx: 5 }, // Blue
-              { id: 4, price: 500, colorIdx: 7 }  // Purple
+              { id: 2, price: 300, colorIdx: 3 },
+              { id: 3, price: 400, colorIdx: 5 },
+              { id: 4, price: 500, colorIdx: 7 }
           ]);
           
-          // 颜色选择器状态 (用于设置界面)
           const [activeColorPickerIndex, setActiveColorPickerIndex] = useState(null);
 
           // --- 计算器核心状态 ---
-          const [cartItems, setCartItems] = useState([]);
+          const [cartItems, setCartItems] = useState([]); // { value, count, label, isTaxed }
           const [currentItem, setCurrentItem] = useState({ value: '0', count: 1, isPreset: false });
           const [stage, setStage] = useState('input_value');
           const [displayValue, setDisplayValue] = useState('0');
@@ -277,15 +276,47 @@
           const [finalTotal, setFinalTotal] = useState(null);
           const [receivedAmount, setReceivedAmount] = useState(null);
           
-          // 历史记录
-          const [historyLog, setHistoryLog] = useState([]);
+          // 历史记录 (localStorage)
+          const [historyLog, setHistoryLog] = useState(() => {
+              try {
+                  const saved = localStorage.getItem('pos_calculator_history');
+                  return saved ? JSON.parse(saved) : [];
+              } catch (e) {
+                  return [];
+              }
+          });
           const [showHistoryModal, setShowHistoryModal] = useState(false);
-          const [counts, setCounts] = useState({}); // key: product id (0-4)
+          const [counts, setCounts] = useState({});
 
           const t = translations[lang];
 
-          // 辅助函数
-          const formatNumber = (num) => parseFloat(parseFloat(num).toPrecision(12)).toString();
+          // 履歴保存
+          useEffect(() => {
+              localStorage.setItem('pos_calculator_history', JSON.stringify(historyLog));
+          }, [historyLog]);
+
+          // expression 自動更新
+          useEffect(() => {
+              let exps = cartItems.map(item => item.label);
+              // currentItemが0でなければ、入力中として表示に追加
+              if (currentItem.value !== '0') {
+                  const val = parseFloat(currentItem.value);
+                  const label = currentItem.isPreset && currentItem.count > 1 ? `${val}×${currentItem.count}` : `${val}`;
+                  exps.push(label);
+              } else if (stage === 'input_quantity') {
+                  // do nothing, wait for quantity
+              }
+              
+              if (mode === 'paying') {
+                  setExpression(`${t.receivable}: ${formatNumber(finalTotal)} | ${t.inputReceived}`);
+              } else if (mode === 'change') {
+                  setExpression(`${t.total}: ${formatNumber(finalTotal)} | ${t.received}: ${receivedAmount}`);
+              } else {
+                  setExpression(exps.join(' + ') + (exps.length > 0 ? '' : '')); 
+              }
+          }, [cartItems, currentItem, mode, finalTotal, receivedAmount, t, stage]);
+
+          const formatNumber = (num) => Math.round(num).toString();
           const getColor = (idx) => COLOR_PALETTE[idx % COLOR_PALETTE.length];
           const pad = (n) => n.toString().padStart(2, '0');
 
@@ -298,7 +329,7 @@
           const startTutorial = () => {
               setAppState('calculator');
               setTutorialActive(true);
-              setTutorialStep(1); // 1:Products, 2:Screen, 3:Keypad, 4:Enter, 5:Record, 6:History, 7:Setup
+              setTutorialStep(1);
           };
 
           const skipTutorial = () => {
@@ -319,11 +350,9 @@
           // --- 设置页面逻辑 ---
           const handleProductCountChange = (count) => {
               setCustomProdCount(count);
-              // 调整 products 数组长度，保留已有设置
               setProducts(prev => {
                   const newProds = [];
                   for(let i=0; i<count; i++) {
-                      // 如果之前有配置，沿用；否则生成新的，颜色轮询
                       newProds.push(prev[i] || { id: i, price: (i+1)*100, colorIdx: i % COLOR_PALETTE.length });
                   }
                   return newProds;
@@ -348,7 +377,6 @@
 
           const exitSetup = () => {
               setAppState('calculator');
-              // 初始化计数器
               const initCounts = {};
               products.forEach(p => initCounts[p.id] = 0);
               setCounts(initCounts);
@@ -419,15 +447,15 @@
             const count = currentItem.count;
             if (val === 0) return;
 
-            const newItem = { ...currentItem, value: val }; 
-            const newCart = [...cartItems, newItem];
-            setCartItems(newCart);
-
-            const itemStr = newItem.isPreset ? 
-               (count > 1 ? `${val}×${count}` : `${val}`) : 
-               (count > 1 ? `${val}×${count}` : `${val}`); 
+            // アイテム確定時にラベルとTaxフラグを付与
+            const newItem = { 
+                ...currentItem, 
+                value: val,
+                label: currentItem.isPreset && count > 1 ? `${val}×${count}` : `${val}`,
+                isTaxed: false
+            }; 
             
-            setExpression(prev => prev ? `${prev} + ${itemStr}` : itemStr);
+            setCartItems([...cartItems, newItem]);
             setCurrentItem({ value: '0', count: 1, isPreset: false });
             setStage('input_value');
           };
@@ -435,19 +463,26 @@
           const handleEqual = () => {
             let finalCart = [...cartItems];
             if (parseFloat(currentItem.value) !== 0) {
-              finalCart.push({ ...currentItem, value: parseFloat(currentItem.value) });
+                const val = parseFloat(currentItem.value);
+                finalCart.push({ 
+                    ...currentItem, 
+                    value: val,
+                    label: currentItem.isPreset && currentItem.count > 1 ? `${val}×${currentItem.count}` : `${val}`,
+                    isTaxed: false
+                });
             }
             if (finalCart.length === 0) return;
 
-            const total = finalCart.reduce((acc, item) => acc + (item.value * item.count), 0);
+            const rawTotal = finalCart.reduce((acc, item) => acc + (item.value * item.count), 0);
+            const total = Math.round(rawTotal);
 
             setCartItems([]); 
             setCurrentItem({ value: String(total), count: 1, isPreset: false });
             setStage('input_value');
             setDisplayValue(String(formatNumber(total)));
             
-            const fullExp = finalCart.map(item => item.count > 1 ? `${item.value}×${item.count}` : item.value).join(' + ');
-            setExpression(`${fullExp} =`);
+            // expressionはuseEffectで自動更新されるが、=を押した瞬間は完了状態にしたいかもしれない
+            // ここではシンプルに結果を次の入力として扱う
             updateCountsFromCart(finalCart);
           };
 
@@ -463,69 +498,105 @@
             });
           };
 
+          // --- ロジック修正: x1.1 ボタン ---
           const multiplyBy1Point1 = () => {
-            let finalCart = [...cartItems];
+            let currentCart = [...cartItems];
+            
+            // 1. 入力中の数値があればカートに確定させる
             if (parseFloat(currentItem.value) !== 0) {
-              finalCart.push({ ...currentItem, value: parseFloat(currentItem.value) });
+                const val = parseFloat(currentItem.value);
+                currentCart.push({
+                    ...currentItem,
+                    value: val,
+                    count: currentItem.count,
+                    label: currentItem.isPreset && currentItem.count > 1 ? `${val}×${currentItem.count}` : `${val}`,
+                    isTaxed: false
+                });
             }
 
-            let baseTotal = 0;
-            if (finalCart.length > 0) {
-              updateCountsFromCart(finalCart);
-              baseTotal = finalCart.reduce((acc, item) => acc + (item.value * item.count), 0);
-              const fullExp = finalCart.map(item => item.count > 1 ? `${item.value}×${item.count}` : item.value).join(' + ');
-              setExpression(`(${fullExp}) × 1.1`);
-              setCartItems([]);
+            // 2. カート内の「まだTax計算されていない」アイテムを抽出
+            const untaxedItems = currentCart.filter(item => !item.isTaxed);
+            const taxedItems = currentCart.filter(item => item.isTaxed);
+
+            // 対象がなければ何もしない
+            if (untaxedItems.length === 0) return;
+
+            // 3. 対象アイテムの合計を計算してx1.1 (四捨五入)
+            const subtotal = untaxedItems.reduce((acc, item) => acc + (item.value * item.count), 0);
+            const taxIncludedValue = Math.round(subtotal * 1.1);
+
+            // 4. 新しいラベルの生成 (100+200)x1.1 のような形
+            let newLabel = "";
+            if (untaxedItems.length === 1) {
+                newLabel = `${untaxedItems[0].label}×1.1`;
             } else {
-              baseTotal = parseFloat(displayValue);
-              setExpression(prev => prev ? `(${prev}) × 1.1` : `× 1.1`);
+                const joined = untaxedItems.map(i => i.label).join('+');
+                newLabel = `(${joined})×1.1`;
             }
 
-            if (baseTotal === 0) return;
-            const newVal = baseTotal * 1.1;
-            setDisplayValue(String(formatNumber(newVal)));
-            setCurrentItem({ value: String(newVal), count: 1, isPreset: false });
+            // 5. 課税済みアイテムとして作成
+            const newTaxedItem = {
+                value: taxIncludedValue,
+                count: 1, // まとめて1つのアイテムとする
+                isPreset: false,
+                label: newLabel,
+                isTaxed: true
+            };
+
+            // 6. カートを更新（既存の課税済み + 新規課税済み）
+            // これにより、入力中の数値(currentItem)はクリアされ、カート内に確定アイテムとして残る
+            setCartItems([...taxedItems, newTaxedItem]);
+            setCurrentItem({ value: '0', count: 1, isPreset: false });
+            setDisplayValue(String(taxIncludedValue));
+            
+            // カウントの更新 (プリセット商品のカウントを維持するため、untaxedItemsから集計)
+            updateCountsFromCart(untaxedItems);
           };
 
           const handlePayment = () => {
-            let total = parseFloat(displayValue);
-            const hasRawItems = cartItems.length > 0 || currentItem.isPreset;
-
-            if (hasRawItems) {
-               let finalCart = [...cartItems];
-               if (parseFloat(currentItem.value) !== 0) {
-                  finalCart.push({ ...currentItem, value: parseFloat(currentItem.value) });
-               }
-               updateCountsFromCart(finalCart);
-               total = finalCart.reduce((acc, item) => acc + (item.value * item.count), 0);
-            } 
+            // 現在の入力も含めてカートを構築
+            let finalCart = [...cartItems];
+            if (parseFloat(currentItem.value) !== 0) {
+                const val = parseFloat(currentItem.value);
+                finalCart.push({ 
+                    ...currentItem, 
+                    value: val,
+                    label: currentItem.isPreset && currentItem.count > 1 ? `${val}×${currentItem.count}` : `${val}`,
+                    isTaxed: false
+                });
+            }
+            // カートを更新して計算へ
+            setCartItems(finalCart);
+            updateCountsFromCart(finalCart);
+            
+            const rawTotal = finalCart.reduce((acc, item) => acc + (item.value * item.count), 0);
+            const total = Math.round(rawTotal);
 
             if (total === 0) return;
+            
             setFinalTotal(total);
             setMode('paying');
             setDisplayValue('0');
             setCurrentItem({ value: '0', count: 1, isPreset: false });
-            setExpression(`${t.receivable}: ${formatNumber(total)} | ${t.inputReceived}`);
+            // expressionはuseEffectで更新される
           };
 
           const confirmPayment = () => {
             const received = parseFloat(displayValue);
             setReceivedAmount(received);
-            const change = received - finalTotal;
+            const change = received - finalTotal; 
             setDisplayValue(String(formatNumber(change)));
             setMode('change');
-            setExpression(`${t.total}: ${formatNumber(finalTotal)} | ${t.received}: ${received}`);
           };
 
           const handleRecord = () => {
             const now = new Date();
-            // 格式化日期 YYYY-MM-DD
             const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
             const timeStr = now.toTimeString().split(' ')[0];
             
             const newRecord = {
               id: Date.now(),
-              date: dateStr, // 新增日期字段
+              date: dateStr,
               time: timeStr,
               counts: { ...counts },
               total: finalTotal,
@@ -602,8 +673,6 @@
             </button>
           );
 
-          // --- UIパーツ: チュートリアル用の吹き出し ---
-          // positionClass: Tailwindの配置クラス (例: "top-full left-1/2 -translate-x-1/2 mt-2")
           const TutorialBubble = ({ text, onNext, isLast, positionClass = "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" }) => (
               <div className={`tutorial-tooltip absolute w-64 bg-indigo-600 text-white p-4 rounded-xl shadow-2xl animate-bounce-subtle ${positionClass}`}>
                   <div className="text-sm mb-3 font-medium leading-relaxed">{text}</div>
@@ -777,7 +846,7 @@
                      <button onClick={() => setAppState('setup')} className="flex items-center gap-1 hover:text-white transition-colors ml-2">
                         <IconSettings size={16} />
                      </button>
-                     {/* 変更: ヘルプボタンクリックで確認画面へ */}
+                     {/* ヘルプボタンクリックで確認画面へ */}
                      <button onClick={() => setAppState('tutorial_ask')} className="flex items-center gap-1 hover:text-white transition-colors ml-2">
                         <IconHelp size={16} />
                      </button>
@@ -829,8 +898,6 @@
                   )}
                   <div className="text-gray-400 text-right text-sm min-h-[1.5rem] mb-1 break-words leading-tight">
                     {expression}
-                    {currentItem.value !== '0' && stage === 'input_value' && cartItems.length > 0 && ` + ${currentItem.value}`}
-                    {stage === 'input_quantity' && ` × ${currentItem.count}`}
                   </div>
                   <div className="flex justify-between items-end">
                     <div className="text-xs text-indigo-400 font-bold mb-2">
