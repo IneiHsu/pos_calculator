@@ -52,7 +52,6 @@
             background-color: white;
             box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75);
             border-radius: 1rem;
-            /* pointer-events: none;  <-- 削除: これがあると中のボタンが押せなくなるため */
         }
         /* オーバーレイ上の説明文 */
         .tutorial-tooltip {
@@ -149,12 +148,13 @@
                     no: "不需要",
                     next: "下一步",
                     finish: "完成",
-                    step1_desc: "在这里，您可以将预设商品快速添加到计算列表。也可以长按设置价格。",
+                    step1_desc: "在这里，您可以将预设商品快速添加到计算列表。稍后可在设置里调整数量，价格和颜色。",
                     step2_desc: "计算结果和输入过程会显示在这里。",
                     step3_desc: "使用数字键盘输入任意金额或数量。",
                     step4_desc: "商品选择完成后，点击绿色的“实收”按钮，输入顾客支付的金额，然后点击“=”计算找零。",
-                    step5_desc: "在这里查看交易记录并下载CSV文件。",
-                    step6_desc: "最后，您可以点击右上角的设置按钮，自定义商品数量、价格和颜色。",
+                    step5_desc: "最后，点击这里显示的黑色“记录”按钮，保存本次交易并开始下一笔。",
+                    step6_desc: "在这里查看交易记录并下载CSV文件。",
+                    step7_desc: "最后，您可以点击右上角的设置按钮，自定义商品数量、价格和颜色。",
                 }
             },
             ja: {
@@ -190,12 +190,13 @@
                     no: "いいえ",
                     next: "次へ",
                     finish: "完了",
-                    step1_desc: "ここではプリセット商品をワンタップで計算リストに追加できます。後で設定画面から価格や色を変更可能です。",
+                    step1_desc: "ここではプリセット商品をワンタップでリストに追加できます。後で設定画面から価格や色を変更可能です。",
                     step2_desc: "計算結果や入力プロセスがここに大きく表示されます。",
                     step3_desc: "テンキーを使って、登録されていない金額や数量を自由に入力できます。",
                     step4_desc: "商品を選んだら、緑色の「預かり」ボタンを押し、頂いた金額を入力して「=」でお釣りを計算します。",
-                    step5_desc: "左上のボタンから、これまでの取引履歴を確認したりCSVで保存したりできます。",
-                    step6_desc: "最後に、右上の設定ボタンから、商品ボタンの数やそれぞれの価格・色を自由にカスタマイズできます。",
+                    step5_desc: "最後に、ここに表示される黒い「記録」ボタンを押すと、取引が保存され次の会計へ進みます。",
+                    step6_desc: "左上のボタンから、これまでの取引履歴を確認したりCSVで保存したりできます。",
+                    step7_desc: "右上の設定ボタンから、商品ボタンの数やそれぞれの価格・色を自由にカスタマイズできます。",
                 }
             },
             en: {
@@ -235,8 +236,9 @@
                     step2_desc: "Calculation results and input process appear here.",
                     step3_desc: "Use the keypad to enter custom amounts or quantities.",
                     step4_desc: "After selecting items, tap the green 'Cash' button, enter the amount received, and press '=' to calculate change.",
-                    step5_desc: "View transaction history and download CSV files here.",
-                    step6_desc: "Finally, tap the Settings button here to customize product count, prices, and colors.",
+                    step5_desc: "Finally, tap the black 'Record' button here to save the transaction.",
+                    step6_desc: "View transaction history and download CSV files here.",
+                    step7_desc: "Tap the Settings button here to customize product count, prices, and colors.",
                 }
             }
         };
@@ -296,7 +298,7 @@
           const startTutorial = () => {
               setAppState('calculator');
               setTutorialActive(true);
-              setTutorialStep(1); // 1: Products, 2: Screen, 3: Keypad, 4: Enter, 5: History, 6: Setup
+              setTutorialStep(1); // 1:Products, 2:Screen, 3:Keypad, 4:Enter, 5:Record, 6:History, 7:Setup
           };
 
           const skipTutorial = () => {
@@ -306,7 +308,7 @@
           };
 
           const nextTutorialStep = () => {
-              if (tutorialStep < 6) {
+              if (tutorialStep < 7) {
                   setTutorialStep(tutorialStep + 1);
               } else {
                   setTutorialActive(false);
@@ -756,15 +758,18 @@
           return (
             <div className="flex items-center justify-center font-sans touch-manipulation min-h-screen relative">
               
-              {/* チュートリアル用の背景オーバーレイ */}
+              {/* チュートリアル用の背景オーバーレイ - クリックで次へ進む */}
               {tutorialActive && (
-                  <div className="fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 pointer-events-none"></div>
+                  <div 
+                    className="fixed inset-0 bg-black/20 z-40 transition-opacity duration-300 cursor-pointer"
+                    onClick={nextTutorialStep}
+                  ></div>
               )}
 
               <div className="w-full max-w-md bg-white h-screen sm:h-auto sm:min-h-[800px] sm:rounded-3xl sm:shadow-2xl overflow-hidden flex flex-col relative fade-in z-0">
                 
                 {/* 顶部状态栏 */}
-                <div className={`bg-gray-900 text-gray-300 px-4 pt-12 pb-2 sm:pt-2 flex justify-between items-center text-xs sm:text-sm transition-all duration-300 ${tutorialStep === 5 || tutorialStep === 6 ? 'spotlight-active' : ''}`}>
+                <div className={`bg-gray-900 text-gray-300 px-4 pt-12 pb-2 sm:pt-2 flex justify-between items-center text-xs sm:text-sm transition-all duration-300 ${tutorialStep === 6 || tutorialStep === 7 ? 'spotlight-active' : ''}`}>
                   <div className="flex gap-2 relative">
                      <button onClick={() => setShowHistoryModal(true)} className="flex items-center gap-1 hover:text-white transition-colors">
                         <IconFileText size={16} /> {t.viewRecord}
@@ -772,23 +777,24 @@
                      <button onClick={() => setAppState('setup')} className="flex items-center gap-1 hover:text-white transition-colors ml-2">
                         <IconSettings size={16} />
                      </button>
-                     <button onClick={startTutorial} className="flex items-center gap-1 hover:text-white transition-colors ml-2">
+                     {/* 変更: ヘルプボタンクリックで確認画面へ */}
+                     <button onClick={() => setAppState('tutorial_ask')} className="flex items-center gap-1 hover:text-white transition-colors ml-2">
                         <IconHelp size={16} />
                      </button>
 
-                     {/* Step 5 Tutorial Bubble (履歴ボタンの下) */}
-                     {tutorialStep === 5 && (
-                         <TutorialBubble 
-                            text={t.tutorial.step5_desc} 
-                            onNext={nextTutorialStep} 
-                            positionClass="top-full left-10 mt-2" 
-                         />
-                     )}ac
-
-                     {/* Step 6 Tutorial Bubble (設定ボタンの下) */}
+                     {/* Step 6 Tutorial Bubble (履歴ボタンの下) */}
                      {tutorialStep === 6 && (
                          <TutorialBubble 
                             text={t.tutorial.step6_desc} 
+                            onNext={nextTutorialStep} 
+                            positionClass="top-full left-10 mt-2" 
+                         />
+                     )}
+
+                     {/* Step 7 Tutorial Bubble (設定ボタンの下) */}
+                     {tutorialStep === 7 && (
+                         <TutorialBubble 
+                            text={t.tutorial.step7_desc} 
                             onNext={nextTutorialStep} 
                             isLast
                             positionClass="top-full left-24 mt-2" 
@@ -872,7 +878,7 @@
                   <hr className="border-gray-200 my-1"/>
 
                   {/* 数字键盘固定布局 */}
-                  <div className={`grid grid-cols-4 gap-2 flex-1 transition-all duration-300 p-1 relative ${tutorialStep === 3 || tutorialStep === 4 ? 'spotlight-active' : ''}`}>
+                  <div className={`grid grid-cols-4 gap-2 flex-1 transition-all duration-300 p-1 relative ${tutorialStep === 3 || tutorialStep === 4 || tutorialStep === 5 ? 'spotlight-active' : ''}`}>
                       
                       {/* Step 3 Bubble (テンキーの上) */}
                       {tutorialStep === 3 && (
@@ -883,10 +889,19 @@
                           />
                       )}
                       
-                      {/* Step 4 Bubble (= ボタンの左) */}
+                      {/* Step 4 Bubble (預かりボタンの隣＝左側) */}
                       {tutorialStep === 4 && (
                           <TutorialBubble 
                             text={t.tutorial.step4_desc} 
+                            onNext={nextTutorialStep} 
+                            positionClass="top-4 right-1/4 mr-2 z-50"
+                          />
+                      )}
+                      
+                      {/* Step 5 Bubble (記録ボタンの上) */}
+                      {tutorialStep === 5 && (
+                          <TutorialBubble 
+                            text={t.tutorial.step5_desc} 
                             onNext={nextTutorialStep} 
                             positionClass="bottom-20 right-24 z-50"
                           />
@@ -910,8 +925,8 @@
                       <Button label="0" onClick={() => inputDigit(0)} colorClass="bg-white text-gray-900 shadow-sm border border-gray-100" />
                       <Button label="00" onClick={() => inputDigit('00')} colorClass="bg-white text-gray-900 shadow-sm border border-gray-100 font-bold" />
                       
-                      {mode === 'change' ? (
-                         <Button label={<div className="flex items-center gap-1"><IconSave size={18}/> {t.record}</div>} onClick={handleRecord} colorClass="bg-gray-800 text-white text-sm sm:text-lg active:bg-black shadow-lg" />
+                      {mode === 'change' || (tutorialActive && tutorialStep === 5) ? (
+                         <Button label={<div className="flex items-center gap-1"><IconSave size={18}/> {t.record}</div>} onClick={handleRecord} colorClass={`bg-gray-800 text-white text-sm sm:text-lg active:bg-black shadow-lg ${tutorialStep === 5 ? 'ring-4 ring-yellow-400 ring-offset-2' : ''}`} />
                       ) : mode === 'paying' ? (
                          <Button label="=" onClick={confirmPayment} colorClass="bg-blue-600 text-white text-2xl active:bg-blue-700 shadow-lg" />
                       ) : (
