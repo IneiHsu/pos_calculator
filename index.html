@@ -45,13 +45,28 @@
             from { opacity: 0; transform: scale(0.9); }
             to { opacity: 1; transform: scale(1); }
         }
+        /* チュートリアル用のスポットライト強調 */
+        .spotlight-active {
+            position: relative;
+            z-index: 50;
+            background-color: white;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75);
+            border-radius: 1rem;
+            /* pointer-events: none;  <-- 削除: これがあると中のボタンが押せなくなるため */
+        }
+        /* オーバーレイ上の説明文 */
+        .tutorial-tooltip {
+            position: absolute;
+            z-index: 60;
+            pointer-events: auto;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen font-sans">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
 
         // --- 图标组件 (SVG) ---
         const IconDelete = ({ size = 24 }) => (
@@ -134,14 +149,12 @@
                     no: "不需要",
                     next: "下一步",
                     finish: "完成",
-                    step1_title: "1. 初始设置",
-                    step1_desc: "在这里设置您的商品按钮数量、价格和颜色。设置完成后点击'开始使用'。",
-                    step2_title: "2. 商品输入",
-                    step2_desc: "点击商品按钮快速添加到购物车，或使用数字键盘输入任意金额。",
-                    step3_title: "3. 结账与找零",
-                    step3_desc: "点击 '=' 计算总额，然后输入顾客支付的金额，系统会自动计算找零。",
-                    step4_title: "4. 记录保存",
-                    step4_desc: "交易完成后会自动保存记录。您可以随时查看历史记录并导出为CSV文件。"
+                    step1_desc: "在这里，您可以将预设商品快速添加到计算列表。也可以长按设置价格。",
+                    step2_desc: "计算结果和输入过程会显示在这里。",
+                    step3_desc: "使用数字键盘输入任意金额或数量。",
+                    step4_desc: "商品选择完成后，点击绿色的“实收”按钮，输入顾客支付的金额，然后点击“=”计算找零。",
+                    step5_desc: "在这里查看交易记录并下载CSV文件。",
+                    step6_desc: "最后，您可以点击右上角的设置按钮，自定义商品数量、价格和颜色。",
                 }
             },
             ja: {
@@ -177,14 +190,12 @@
                     no: "いいえ",
                     next: "次へ",
                     finish: "完了",
-                    step1_title: "1. 初期設定",
-                    step1_desc: "ここで商品ボタンの数、価格、色を設定します。設定が終わったら「開始」ボタンを押してください。",
-                    step2_title: "2. 商品の入力",
-                    step2_desc: "商品ボタンをタップしてカートに追加するか、テンキーで直接金額を入力します。",
-                    step3_title: "3. 会計と計算",
-                    step3_desc: "「=」ボタンで合計を出した後、お預かり金額を入力すると、お釣りが自動計算されます。",
-                    step4_title: "4. 履歴の管理",
-                    step4_desc: "取引は自動的に記録されます。いつでも履歴を確認したり、CSVで保存したりできます。"
+                    step1_desc: "ここではプリセット商品をワンタップで計算リストに追加できます。後で設定画面から価格や色を変更可能です。",
+                    step2_desc: "計算結果や入力プロセスがここに大きく表示されます。",
+                    step3_desc: "テンキーを使って、登録されていない金額や数量を自由に入力できます。",
+                    step4_desc: "商品を選んだら、緑色の「預かり」ボタンを押し、頂いた金額を入力して「=」でお釣りを計算します。",
+                    step5_desc: "左上のボタンから、これまでの取引履歴を確認したりCSVで保存したりできます。",
+                    step6_desc: "最後に、右上の設定ボタンから、商品ボタンの数やそれぞれの価格・色を自由にカスタマイズできます。",
                 }
             },
             en: {
@@ -220,85 +231,24 @@
                     no: "No",
                     next: "Next",
                     finish: "Finish",
-                    step1_title: "1. Setup",
-                    step1_desc: "Configure product buttons, prices, and colors here. Click 'Start' when ready.",
-                    step2_title: "2. Input Items",
-                    step2_desc: "Tap product buttons to add to cart, or use the keypad to enter custom amounts.",
-                    step3_title: "3. Checkout",
-                    step3_desc: "Press '=' to get the total, then enter the cash received to calculate change.",
-                    step4_title: "4. Records",
-                    step4_desc: "Transactions are saved automatically. View history and download CSV anytime."
+                    step1_desc: "Tap these buttons to quickly add preset items. You can configure prices later.",
+                    step2_desc: "Calculation results and input process appear here.",
+                    step3_desc: "Use the keypad to enter custom amounts or quantities.",
+                    step4_desc: "After selecting items, tap the green 'Cash' button, enter the amount received, and press '=' to calculate change.",
+                    step5_desc: "View transaction history and download CSV files here.",
+                    step6_desc: "Finally, tap the Settings button here to customize product count, prices, and colors.",
                 }
             }
         };
 
-        // --- チュートリアルコンポーネント ---
-        const TutorialOverlay = ({ lang, onClose }) => {
-            const [step, setStep] = useState(0); // 0: ask, 1-4: guide
-            const t = translations[lang].tutorial;
-
-            const handleNext = () => {
-                if (step < 4) setStep(step + 1);
-                else onClose();
-            };
-
-            const content = () => {
-                switch(step) {
-                    case 0:
-                        return (
-                            <div className="text-center">
-                                <div className="mx-auto w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-4">
-                                    <IconHelp size={32} />
-                                </div>
-                                <h3 className="text-xl font-bold text-gray-800 mb-2">{t.ask}</h3>
-                                <div className="flex gap-3 mt-6">
-                                    <button onClick={onClose} className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold active:bg-gray-200">{t.no}</button>
-                                    <button onClick={() => setStep(1)} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg active:scale-95 transition-transform">{t.yes}</button>
-                                </div>
-                            </div>
-                        );
-                    case 1:
-                        return <TutorialStep title={t.step1_title} desc={t.step1_desc} onNext={handleNext} btnText={t.next} />;
-                    case 2:
-                        return <TutorialStep title={t.step2_title} desc={t.step2_desc} onNext={handleNext} btnText={t.next} />;
-                    case 3:
-                        return <TutorialStep title={t.step3_title} desc={t.step3_desc} onNext={handleNext} btnText={t.next} />;
-                    case 4:
-                        return <TutorialStep title={t.step4_title} desc={t.step4_desc} onNext={onClose} btnText={t.finish} isLast />;
-                    default: return null;
-                }
-            };
-
-            return (
-                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-6 fade-in backdrop-blur-sm">
-                    <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl modal-enter relative overflow-hidden">
-                        {content()}
-                    </div>
-                </div>
-            );
-        };
-
-        const TutorialStep = ({ title, desc, onNext, btnText, isLast }) => (
-            <div className="flex flex-col h-full">
-                <div className="flex-1">
-                    <h3 className="text-lg font-bold text-indigo-600 mb-2">{title}</h3>
-                    <p className="text-gray-600 leading-relaxed text-sm sm:text-base">{desc}</p>
-                </div>
-                <div className="mt-6 flex justify-end">
-                    <button onClick={onNext} className={`px-6 py-2.5 rounded-xl font-bold text-white flex items-center gap-2 shadow-md active:scale-95 transition-transform ${isLast ? 'bg-green-600' : 'bg-indigo-600'}`}>
-                        {btnText} {isLast ? <IconCheck size={18}/> : <IconArrowRight size={18}/>}
-                    </button>
-                </div>
-            </div>
-        );
-
         function App() {
           // --- 全局状态 ---
-          const [appState, setAppState] = useState('setup'); // 'setup' | 'calculator'
+          const [appState, setAppState] = useState('lang_selection'); // 'lang_selection' | 'tutorial_ask' | 'calculator' | 'setup'
           const [lang, setLang] = useState('zh');
           
-          // チュートリアル表示状態
-          const [showTutorial, setShowTutorial] = useState(true);
+          // チュートリアル状態
+          const [tutorialActive, setTutorialActive] = useState(false);
+          const [tutorialStep, setTutorialStep] = useState(0);
 
           // 配置状态：每个商品包含 id, price, colorIdx
           const [customProdCount, setCustomProdCount] = useState(5);
@@ -337,6 +287,33 @@
           const getColor = (idx) => COLOR_PALETTE[idx % COLOR_PALETTE.length];
           const pad = (n) => n.toString().padStart(2, '0');
 
+          // --- 初期化フロー ---
+          const handleLangSelect = (selectedLang) => {
+              setLang(selectedLang);
+              setAppState('tutorial_ask');
+          };
+
+          const startTutorial = () => {
+              setAppState('calculator');
+              setTutorialActive(true);
+              setTutorialStep(1); // 1: Products, 2: Screen, 3: Keypad, 4: Enter, 5: History, 6: Setup
+          };
+
+          const skipTutorial = () => {
+              setAppState('calculator');
+              setTutorialActive(false);
+              setTutorialStep(0);
+          };
+
+          const nextTutorialStep = () => {
+              if (tutorialStep < 6) {
+                  setTutorialStep(tutorialStep + 1);
+              } else {
+                  setTutorialActive(false);
+                  setTutorialStep(0);
+              }
+          };
+
           // --- 设置页面逻辑 ---
           const handleProductCountChange = (count) => {
               setCustomProdCount(count);
@@ -367,7 +344,7 @@
               setActiveColorPickerIndex(null);
           };
 
-          const startCalculator = () => {
+          const exitSetup = () => {
               setAppState('calculator');
               // 初始化计数器
               const initCounts = {};
@@ -586,7 +563,6 @@
           };
 
           const downloadCSV = () => {
-            // 动态生成 Header, 增加 date 字段
             let header = "date,time";
             products.forEach((p, idx) => {
                 const colorName = t.colors[getColor(p.colorIdx).id];
@@ -624,17 +600,63 @@
             </button>
           );
 
-          // --- 渲染设置界面 ---
+          // --- UIパーツ: チュートリアル用の吹き出し ---
+          // positionClass: Tailwindの配置クラス (例: "top-full left-1/2 -translate-x-1/2 mt-2")
+          const TutorialBubble = ({ text, onNext, isLast, positionClass = "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" }) => (
+              <div className={`tutorial-tooltip absolute w-64 bg-indigo-600 text-white p-4 rounded-xl shadow-2xl animate-bounce-subtle ${positionClass}`}>
+                  <div className="text-sm mb-3 font-medium leading-relaxed">{text}</div>
+                  <div className="flex justify-end">
+                      <button onClick={onNext} className="bg-white text-indigo-600 px-4 py-1.5 rounded-lg text-sm font-bold shadow-sm active:bg-gray-100 z-50 pointer-events-auto">
+                          {isLast ? t.tutorial.finish : t.tutorial.next}
+                      </button>
+                  </div>
+              </div>
+          );
+
+          // --- 画面レンダリング ---
+
+          // 1. 言語選択画面
+          if (appState === 'lang_selection') {
+              return (
+                  <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+                      <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm text-center fade-in">
+                          <h1 className="text-2xl font-bold text-gray-800 mb-6">Select Language</h1>
+                          <div className="space-y-3">
+                              <button onClick={() => handleLangSelect('zh')} className="w-full py-4 bg-gray-50 hover:bg-indigo-50 text-gray-800 font-bold rounded-xl border border-gray-200 transition-colors">中文</button>
+                              <button onClick={() => handleLangSelect('ja')} className="w-full py-4 bg-gray-50 hover:bg-indigo-50 text-gray-800 font-bold rounded-xl border border-gray-200 transition-colors">日本語</button>
+                              <button onClick={() => handleLangSelect('en')} className="w-full py-4 bg-gray-50 hover:bg-indigo-50 text-gray-800 font-bold rounded-xl border border-gray-200 transition-colors">English</button>
+                          </div>
+                      </div>
+                  </div>
+              );
+          }
+
+          // 2. チュートリアル確認画面
+          if (appState === 'tutorial_ask') {
+              return (
+                  <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+                      <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm text-center fade-in">
+                           <div className="mx-auto w-20 h-20 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-6">
+                                <IconHelp size={40} />
+                           </div>
+                           <h2 className="text-xl font-bold text-gray-800 mb-8">{t.tutorial.ask}</h2>
+                           <div className="flex gap-4">
+                               <button onClick={skipTutorial} className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold">{t.tutorial.no}</button>
+                               <button onClick={startTutorial} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg">{t.tutorial.yes}</button>
+                           </div>
+                      </div>
+                  </div>
+              );
+          }
+          
+          // 3. 設定画面
           if (appState === 'setup') {
               return (
                 <div className="flex items-center justify-center min-h-screen p-4 relative">
-                    {/* チュートリアルオーバーレイ */}
-                    {showTutorial && <TutorialOverlay lang={lang} onClose={() => setShowTutorial(false)} />}
-
                     <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 fade-in flex flex-col gap-6">
                         <div className="flex justify-between items-center">
                             <h1 className="text-2xl font-bold text-gray-800 text-center flex-1">{t.setupTitle}</h1>
-                            <button onClick={() => setShowTutorial(true)} className="text-gray-400 hover:text-indigo-600 transition-colors p-1">
+                            <button onClick={startTutorial} className="text-gray-400 hover:text-indigo-600 transition-colors p-1">
                                 <IconHelp size={22} />
                             </button>
                         </div>
@@ -693,7 +715,7 @@
                         )}
 
                         <button 
-                            onClick={startCalculator}
+                            onClick={exitSetup}
                             className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-transform mt-2"
                         >
                             {t.start}
@@ -730,26 +752,48 @@
               );
           }
 
-          // --- 渲染计算器界面 ---
+          // 4. 計算機画面 (チュートリアル含む)
           return (
-            <div className="flex items-center justify-center font-sans touch-manipulation min-h-screen">
-               {/* 計算機画面でもチュートリアルを表示可能にする場合 */}
-               {showTutorial && <TutorialOverlay lang={lang} onClose={() => setShowTutorial(false)} />}
+            <div className="flex items-center justify-center font-sans touch-manipulation min-h-screen relative">
               
-              <div className="w-full max-w-md bg-white h-screen sm:h-auto sm:min-h-[800px] sm:rounded-3xl sm:shadow-2xl overflow-hidden flex flex-col relative fade-in">
+              {/* チュートリアル用の背景オーバーレイ */}
+              {tutorialActive && (
+                  <div className="fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 pointer-events-none"></div>
+              )}
+
+              <div className="w-full max-w-md bg-white h-screen sm:h-auto sm:min-h-[800px] sm:rounded-3xl sm:shadow-2xl overflow-hidden flex flex-col relative fade-in z-0">
                 
                 {/* 顶部状态栏 */}
-                <div className="bg-gray-900 text-gray-300 px-4 pt-12 pb-2 sm:pt-2 flex justify-between items-center text-xs sm:text-sm">
-                  <div className="flex gap-2">
+                <div className={`bg-gray-900 text-gray-300 px-4 pt-12 pb-2 sm:pt-2 flex justify-between items-center text-xs sm:text-sm transition-all duration-300 ${tutorialStep === 5 || tutorialStep === 6 ? 'spotlight-active' : ''}`}>
+                  <div className="flex gap-2 relative">
                      <button onClick={() => setShowHistoryModal(true)} className="flex items-center gap-1 hover:text-white transition-colors">
                         <IconFileText size={16} /> {t.viewRecord}
                      </button>
                      <button onClick={() => setAppState('setup')} className="flex items-center gap-1 hover:text-white transition-colors ml-2">
                         <IconSettings size={16} />
                      </button>
-                     <button onClick={() => setShowTutorial(true)} className="flex items-center gap-1 hover:text-white transition-colors ml-2">
+                     <button onClick={startTutorial} className="flex items-center gap-1 hover:text-white transition-colors ml-2">
                         <IconHelp size={16} />
                      </button>
+
+                     {/* Step 5 Tutorial Bubble (履歴ボタンの下) */}
+                     {tutorialStep === 5 && (
+                         <TutorialBubble 
+                            text={t.tutorial.step5_desc} 
+                            onNext={nextTutorialStep} 
+                            positionClass="top-full left-10 mt-2" 
+                         />
+                     )}ac
+
+                     {/* Step 6 Tutorial Bubble (設定ボタンの下) */}
+                     {tutorialStep === 6 && (
+                         <TutorialBubble 
+                            text={t.tutorial.step6_desc} 
+                            onNext={nextTutorialStep} 
+                            isLast
+                            positionClass="top-full left-24 mt-2" 
+                         />
+                     )}
                   </div>
                   <div className="flex gap-2">
                     {/* 实时计数预览 */}
@@ -768,7 +812,15 @@
                 </div>
 
                 {/* 屏幕 */}
-                <div className="bg-gray-900 text-white p-6 pt-2 flex flex-col justify-end h-40 relative">
+                <div className={`bg-gray-900 text-white p-6 pt-2 flex flex-col justify-end h-40 relative transition-all duration-300 ${tutorialStep === 2 ? 'spotlight-active' : ''}`}>
+                  {/* Step 2 Tutorial Bubble (画面中央) */}
+                  {tutorialStep === 2 && (
+                      <TutorialBubble 
+                        text={t.tutorial.step2_desc} 
+                        onNext={nextTutorialStep} 
+                        positionClass="left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                      />
+                  )}
                   <div className="text-gray-400 text-right text-sm min-h-[1.5rem] mb-1 break-words leading-tight">
                     {expression}
                     {currentItem.value !== '0' && stage === 'input_value' && cartItems.length > 0 && ` + ${currentItem.value}`}
@@ -785,10 +837,19 @@
                 </div>
 
                 {/* 键盘区域 - 动态布局 */}
-                <div className="flex-1 p-3 bg-gray-50 pb-8 sm:pb-4 flex flex-col gap-2">
+                <div className="flex-1 p-3 bg-gray-50 pb-8 sm:pb-4 flex flex-col gap-2 relative">
                   
                   {/* 自定义商品区域 + 功能键 (自动网格) */}
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className={`grid grid-cols-4 gap-2 transition-all duration-300 p-1 relative ${tutorialStep === 1 ? 'spotlight-active' : ''}`}>
+                      {/* Step 1 Bubble (商品ボタンの下) */}
+                      {tutorialStep === 1 && (
+                          <TutorialBubble 
+                            text={t.tutorial.step1_desc} 
+                            onNext={nextTutorialStep} 
+                            positionClass="top-full left-1/2 -translate-x-1/2 mt-4 z-50"
+                          />
+                      )}
+                      
                       {/* 商品按钮 */}
                       {products.map((p, idx) => {
                           const color = getColor(p.colorIdx);
@@ -802,7 +863,7 @@
                           );
                       })}
                       
-                      {/* 功能按钮：填充剩余空间或新起一行 */}
+                      {/* 功能按钮 */}
                       <Button label="x1.1" onClick={multiplyBy1Point1} colorClass="bg-teal-600 text-white active:bg-teal-700 font-bold" />
                       <Button label={<IconRotateCcw size={20}/>} onClick={fullReset} colorClass="bg-gray-200 text-red-600 active:bg-gray-300" />
                       <Button label={<IconDelete size={20}/>} onClick={deleteLast} colorClass="bg-gray-200 text-gray-700 active:bg-gray-300" />
@@ -811,7 +872,26 @@
                   <hr className="border-gray-200 my-1"/>
 
                   {/* 数字键盘固定布局 */}
-                  <div className="grid grid-cols-4 gap-2 flex-1">
+                  <div className={`grid grid-cols-4 gap-2 flex-1 transition-all duration-300 p-1 relative ${tutorialStep === 3 || tutorialStep === 4 ? 'spotlight-active' : ''}`}>
+                      
+                      {/* Step 3 Bubble (テンキーの上) */}
+                      {tutorialStep === 3 && (
+                          <TutorialBubble 
+                            text={t.tutorial.step3_desc} 
+                            onNext={nextTutorialStep} 
+                            positionClass="bottom-full left-1/2 -translate-x-1/2 mb-4 z-50"
+                          />
+                      )}
+                      
+                      {/* Step 4 Bubble (= ボタンの左) */}
+                      {tutorialStep === 4 && (
+                          <TutorialBubble 
+                            text={t.tutorial.step4_desc} 
+                            onNext={nextTutorialStep} 
+                            positionClass="bottom-20 right-24 z-50"
+                          />
+                      )}
+
                       <Button label="7" onClick={() => inputDigit(7)} colorClass="bg-white text-gray-900 shadow-sm border border-gray-100" />
                       <Button label="8" onClick={() => inputDigit(8)} colorClass="bg-white text-gray-900 shadow-sm border border-gray-100" />
                       <Button label="9" onClick={() => inputDigit(9)} colorClass="bg-white text-gray-900 shadow-sm border border-gray-100" />
@@ -835,7 +915,7 @@
                       ) : mode === 'paying' ? (
                          <Button label="=" onClick={confirmPayment} colorClass="bg-blue-600 text-white text-2xl active:bg-blue-700 shadow-lg" />
                       ) : (
-                         <Button label="=" onClick={handleEqual} colorClass="bg-blue-600 text-white text-2xl active:bg-blue-700 shadow-lg" />
+                         <Button label="=" onClick={handleEqual} colorClass={`bg-blue-600 text-white text-2xl active:bg-blue-700 shadow-lg ${tutorialStep === 4 ? 'ring-4 ring-yellow-400 ring-offset-2' : ''}`} />
                       )}
 
                       <Button label="+" onClick={() => performOperation('+')} colorClass="bg-indigo-50 text-indigo-600 font-bold text-xl" />
@@ -855,7 +935,7 @@
                       <div className="flex-1 overflow-y-auto p-4 space-y-3">
                         {historyLog.length === 0 ? <div className="text-center text-gray-400 mt-10">{t.noRecord}</div> : historyLog.map((log) => (
                           <div key={log.id} className="bg-white border rounded-xl p-3 shadow-sm text-sm">
-                            {/* 修改：显示日期和时间 */}
+                            {/* 显示日期和时间 */}
                             <div className="flex justify-between mb-2">
                               <div className="flex flex-col">
                                   <span className="text-[10px] text-gray-400 font-normal">{log.date}</span>
