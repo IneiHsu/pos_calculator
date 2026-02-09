@@ -21,19 +21,17 @@ A lightweight, mobile-first web app that turns your smartphone into a simple POS
 
 ### How to Use
 
-#### 1) Installation (iOS / Android)
-1. Save `calculator.html` to your phone  
-2. Open it in a browser (**Safari recommended on iOS**)  
-3. Tap **Share** → **Add to Home Screen**  
-4. Launch it from the home screen for the best full-screen experience
+#### 1) Using this tool
+Access the URL : "https://ineihsu.github.io/pos_calculator/index.html"
 
 #### 2) Initial Setup
-1. **Language:** Select your preferred language  
-2. **Product Buttons:** Use the slider to choose **0–5** preset buttons  
-3. **Customize:**
-   - Enter the **Price** for each button  
-   - Tap the **color circle** to open the color picker (**10 options**)  
-4. Tap **Start** to enter the calculator view
+1. **Language:** Select your preferred language
+2. **Tutorial:** Choose whether to view a quick interactive tutorial
+3. **Product Buttons:** Use the slider to choose **0–5** preset buttons
+4. **Customize:**
+   - Enter the **Price** for each button
+   - Tap the **color circle** to open the color picker (**10 options**)
+5. Tap **Start** to enter the calculator view
 
 #### 3) Making a Sale
 - **Add Items:** Tap preset buttons to add items  
