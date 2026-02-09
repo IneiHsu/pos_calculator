@@ -75,6 +75,15 @@
         const IconSettings = ({ size = 24 }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
         );
+        const IconHelp = ({ size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        );
+        const IconArrowRight = ({ size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        );
+        const IconCheck = ({ size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        );
 
         // --- 颜色配置库 ---
         const COLOR_PALETTE = [
@@ -118,6 +127,21 @@
                 colors: {
                     red: "红色", orange: "橙色", yellow: "黄色", green: "绿色", teal: "青色",
                     blue: "蓝色", indigo: "靛色", purple: "紫色", pink: "粉色", gray: "灰色"
+                },
+                tutorial: {
+                    ask: "需要查看使用教程吗？",
+                    yes: "好的",
+                    no: "不需要",
+                    next: "下一步",
+                    finish: "完成",
+                    step1_title: "1. 初始设置",
+                    step1_desc: "在这里设置您的商品按钮数量、价格和颜色。设置完成后点击'开始使用'。",
+                    step2_title: "2. 商品输入",
+                    step2_desc: "点击商品按钮快速添加到购物车，或使用数字键盘输入任意金额。",
+                    step3_title: "3. 结账与找零",
+                    step3_desc: "点击 '=' 计算总额，然后输入顾客支付的金额，系统会自动计算找零。",
+                    step4_title: "4. 记录保存",
+                    step4_desc: "交易完成后会自动保存记录。您可以随时查看历史记录并导出为CSV文件。"
                 }
             },
             ja: {
@@ -146,6 +170,21 @@
                 colors: {
                     red: "赤", orange: "オレンジ", yellow: "黄", green: "緑", teal: "ティール",
                     blue: "青", indigo: "藍", purple: "紫", pink: "ピンク", gray: "グレー"
+                },
+                tutorial: {
+                    ask: "使い方のチュートリアルを見ますか？",
+                    yes: "はい",
+                    no: "いいえ",
+                    next: "次へ",
+                    finish: "完了",
+                    step1_title: "1. 初期設定",
+                    step1_desc: "ここで商品ボタンの数、価格、色を設定します。設定が終わったら「開始」ボタンを押してください。",
+                    step2_title: "2. 商品の入力",
+                    step2_desc: "商品ボタンをタップしてカートに追加するか、テンキーで直接金額を入力します。",
+                    step3_title: "3. 会計と計算",
+                    step3_desc: "「=」ボタンで合計を出した後、お預かり金額を入力すると、お釣りが自動計算されます。",
+                    step4_title: "4. 履歴の管理",
+                    step4_desc: "取引は自動的に記録されます。いつでも履歴を確認したり、CSVで保存したりできます。"
                 }
             },
             en: {
@@ -174,15 +213,93 @@
                 colors: {
                     red: "Red", orange: "Orange", yellow: "Yellow", green: "Green", teal: "Teal",
                     blue: "Blue", indigo: "Indigo", purple: "Purple", pink: "Pink", gray: "Gray"
+                },
+                tutorial: {
+                    ask: "Do you want to see the tutorial?",
+                    yes: "Yes",
+                    no: "No",
+                    next: "Next",
+                    finish: "Finish",
+                    step1_title: "1. Setup",
+                    step1_desc: "Configure product buttons, prices, and colors here. Click 'Start' when ready.",
+                    step2_title: "2. Input Items",
+                    step2_desc: "Tap product buttons to add to cart, or use the keypad to enter custom amounts.",
+                    step3_title: "3. Checkout",
+                    step3_desc: "Press '=' to get the total, then enter the cash received to calculate change.",
+                    step4_title: "4. Records",
+                    step4_desc: "Transactions are saved automatically. View history and download CSV anytime."
                 }
             }
         };
+
+        // --- チュートリアルコンポーネント ---
+        const TutorialOverlay = ({ lang, onClose }) => {
+            const [step, setStep] = useState(0); // 0: ask, 1-4: guide
+            const t = translations[lang].tutorial;
+
+            const handleNext = () => {
+                if (step < 4) setStep(step + 1);
+                else onClose();
+            };
+
+            const content = () => {
+                switch(step) {
+                    case 0:
+                        return (
+                            <div className="text-center">
+                                <div className="mx-auto w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-4">
+                                    <IconHelp size={32} />
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-800 mb-2">{t.ask}</h3>
+                                <div className="flex gap-3 mt-6">
+                                    <button onClick={onClose} className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold active:bg-gray-200">{t.no}</button>
+                                    <button onClick={() => setStep(1)} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg active:scale-95 transition-transform">{t.yes}</button>
+                                </div>
+                            </div>
+                        );
+                    case 1:
+                        return <TutorialStep title={t.step1_title} desc={t.step1_desc} onNext={handleNext} btnText={t.next} />;
+                    case 2:
+                        return <TutorialStep title={t.step2_title} desc={t.step2_desc} onNext={handleNext} btnText={t.next} />;
+                    case 3:
+                        return <TutorialStep title={t.step3_title} desc={t.step3_desc} onNext={handleNext} btnText={t.next} />;
+                    case 4:
+                        return <TutorialStep title={t.step4_title} desc={t.step4_desc} onNext={onClose} btnText={t.finish} isLast />;
+                    default: return null;
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-6 fade-in backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl modal-enter relative overflow-hidden">
+                        {content()}
+                    </div>
+                </div>
+            );
+        };
+
+        const TutorialStep = ({ title, desc, onNext, btnText, isLast }) => (
+            <div className="flex flex-col h-full">
+                <div className="flex-1">
+                    <h3 className="text-lg font-bold text-indigo-600 mb-2">{title}</h3>
+                    <p className="text-gray-600 leading-relaxed text-sm sm:text-base">{desc}</p>
+                </div>
+                <div className="mt-6 flex justify-end">
+                    <button onClick={onNext} className={`px-6 py-2.5 rounded-xl font-bold text-white flex items-center gap-2 shadow-md active:scale-95 transition-transform ${isLast ? 'bg-green-600' : 'bg-indigo-600'}`}>
+                        {btnText} {isLast ? <IconCheck size={18}/> : <IconArrowRight size={18}/>}
+                    </button>
+                </div>
+            </div>
+        );
 
         function App() {
           // --- 全局状态 ---
           const [appState, setAppState] = useState('setup'); // 'setup' | 'calculator'
           const [lang, setLang] = useState('zh');
           
+          // チュートリアル表示状態
+          const [showTutorial, setShowTutorial] = useState(true);
+
           // 配置状态：每个商品包含 id, price, colorIdx
           const [customProdCount, setCustomProdCount] = useState(5);
           const [products, setProducts] = useState([
@@ -511,8 +628,16 @@
           if (appState === 'setup') {
               return (
                 <div className="flex items-center justify-center min-h-screen p-4 relative">
+                    {/* チュートリアルオーバーレイ */}
+                    {showTutorial && <TutorialOverlay lang={lang} onClose={() => setShowTutorial(false)} />}
+
                     <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 fade-in flex flex-col gap-6">
-                        <h1 className="text-2xl font-bold text-gray-800 text-center">{t.setupTitle}</h1>
+                        <div className="flex justify-between items-center">
+                            <h1 className="text-2xl font-bold text-gray-800 text-center flex-1">{t.setupTitle}</h1>
+                            <button onClick={() => setShowTutorial(true)} className="text-gray-400 hover:text-indigo-600 transition-colors p-1">
+                                <IconHelp size={22} />
+                            </button>
+                        </div>
                         
                         {/* 语言选择 */}
                         <div>
@@ -608,6 +733,9 @@
           // --- 渲染计算器界面 ---
           return (
             <div className="flex items-center justify-center font-sans touch-manipulation min-h-screen">
+               {/* 計算機画面でもチュートリアルを表示可能にする場合 */}
+               {showTutorial && <TutorialOverlay lang={lang} onClose={() => setShowTutorial(false)} />}
+              
               <div className="w-full max-w-md bg-white h-screen sm:h-auto sm:min-h-[800px] sm:rounded-3xl sm:shadow-2xl overflow-hidden flex flex-col relative fade-in">
                 
                 {/* 顶部状态栏 */}
@@ -618,6 +746,9 @@
                      </button>
                      <button onClick={() => setAppState('setup')} className="flex items-center gap-1 hover:text-white transition-colors ml-2">
                         <IconSettings size={16} />
+                     </button>
+                     <button onClick={() => setShowTutorial(true)} className="flex items-center gap-1 hover:text-white transition-colors ml-2">
+                        <IconHelp size={16} />
                      </button>
                   </div>
                   <div className="flex gap-2">
