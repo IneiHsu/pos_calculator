@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>智能收银计算器</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 React 和 ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- 引入 Babel 用于解析 JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        /* 针对 iOS 的特殊优化 */
+        body {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            user-select: none;
+        }
+        /* 隐藏滚动条但保留功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* 简单的淡入动画 */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- 图标组件 (SVG) ---
+        const IconDelete = ({ size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path><line x1="18" y1="9" x2="12" y2="15"></line><line x1="12" y1="9" x2="18" y2="15"></line></svg>
+        );
+        const IconRotateCcw = ({ size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12"></path><path d="M3 3v9h9"></path></svg>
+        );
+        const IconFileText = ({ size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        );
+        const IconDownload = ({ size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        );
+        const IconX = ({ size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        );
+        const IconSave = ({ size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+        );
+        const IconSettings = ({ size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        );
+
+        // --- 多语言配置 ---
+        const translations = {
+            zh: {
+                title: "智能收银计算器",
+                viewRecord: "查看记录",
+                record: "记录",
+                total: "总计",
+                received: "实收",
+                change: "找零",
+                inputReceived: "请输入实收...",
+                receivable: "应收",
+                download: "下载 CSV",
+                noRecord: "暂无记录",
+                currInput: "当前输入",
+                setupTitle: "初始化设置",
+                selectLang: "选择语言",
+                prodCount: "自定义商品数量",
+                setPrice: "设置价格",
+                start: "开始使用",
+                colors: ["红色", "橙色", "绿色", "蓝色", "紫色"],
+                historyTitle: "交易记录",
+                price: "价格",
+                resetSetup: "重置设置"
+            },
+            ja: {
+                title: "スマートレジ電卓",
+                viewRecord: "履歴を見る",
+                record: "記録",
+                total: "合計",
+                received: "預かり",
+                change: "お釣り",
+                inputReceived: "預かり金を入力...",
+                receivable: "小計",
+                download: "CSV保存",
+                noRecord: "履歴なし",
+                currInput: "入力中",
+                setupTitle: "初期設定",
+                selectLang: "言語選択",
+                prodCount: "商品ボタン数",
+                setPrice: "価格設定",
+                start: "開始",
+                colors: ["赤", "オレンジ", "緑", "青", "紫"],
+                historyTitle: "取引履歴",
+                price: "価格",
+                resetSetup: "設定リセット"
+            },
+            en: {
+                title: "Smart POS Calc",
+                viewRecord: "History",
+                record: "Record",
+                total: "Total",
+                received: "Cash",
+                change: "Change",
+                inputReceived: "Enter Cash...",
+                receivable: "Total",
+                download: "Download CSV",
+                noRecord: "No records yet",
+                currInput: "Input",
+                setupTitle: "Setup",
+                selectLang: "Language",
+                prodCount: "Product Buttons",
+                setPrice: "Set Prices",
+                start: "Start",
+                colors: ["Red", "Orange", "Green", "Blue", "Purple"],
+                historyTitle: "History",
+                price: "Price",
+                resetSetup: "Reset"
+            }
+        };
+
+        const colorDefs = [
+            { name: 'red', bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
+            { name: 'orange', bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200' },
+            { name: 'green', bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200' },
+            { name: 'blue', bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200' },
+            { name: 'purple', bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-200' }
+        ];
+
+        function App() {
+          // --- 全局状态 ---
+          const [appState, setAppState] = useState('setup'); // 'setup' | 'calculator'
+          const [lang, setLang] = useState('zh');
+          
+          // 配置状态
+          const [customProdCount, setCustomProdCount] = useState(5);
+          const [products, setProducts] = useState([
+              { id: 0, price: 100 }, { id: 1, price: 200 }, { id: 2, price: 300 }, { id: 3, price: 400 }, { id: 4, price: 500 }
+          ]);
+
+          // --- 计算器核心状态 ---
+          const [cartItems, setCartItems] = useState([]);
+          const [currentItem, setCurrentItem] = useState({ value: '0', count: 1, isPreset: false });
+          const [stage, setStage] = useState('input_value');
+          const [displayValue, setDisplayValue] = useState('0');
+          const [expression, setExpression] = useState(''); 
+          
+          // POS 状态
+          const [mode, setMode] = useState('calculating'); 
+          const [finalTotal, setFinalTotal] = useState(null);
+          const [receivedAmount, setReceivedAmount] = useState(null);
+          
+          // 历史记录
+          const [historyLog, setHistoryLog] = useState([]);
+          const [showHistoryModal, setShowHistoryModal] = useState(false);
+          const [counts, setCounts] = useState({}); // key: product id (0-4)
+
+          const t = translations[lang];
+
+          // 辅助函数
+          const formatNumber = (num) => parseFloat(parseFloat(num).toPrecision(12)).toString();
+
+          // --- 设置页面逻辑 ---
+          const handleProductCountChange = (count) => {
+              setCustomProdCount(count);
+              // 调整 products 数组长度，保留已有价格
+              setProducts(prev => {
+                  const newProds = [];
+                  for(let i=0; i<count; i++) {
+                      newProds.push(prev[i] || { id: i, price: (i+1)*100 });
+                  }
+                  return newProds;
+              });
+          };
+
+          const handlePriceChange = (index, newPrice) => {
+              const newProds = [...products];
+              newProds[index].price = parseFloat(newPrice) || 0;
+              setProducts(newProds);
+          };
+
+          const startCalculator = () => {
+              setAppState('calculator');
+              // 初始化计数器
+              const initCounts = {};
+              products.forEach(p => initCounts[p.id] = 0);
+              setCounts(initCounts);
+              fullReset();
+          };
+
+          // --- 计算器核心逻辑 ---
+
+          const inputDigit = (digit) => {
+            if (mode === 'change') {
+              fullReset();
+              updateCurrentItemValue(String(digit));
+              return;
+            }
+
+            if (stage === 'input_value') {
+              let newVal;
+              if (digit === '00') {
+                newVal = currentItem.value === '0' ? '0' : currentItem.value + '00';
+              } else {
+                newVal = currentItem.value === '0' ? String(digit) : currentItem.value + digit;
+              }
+              updateCurrentItemValue(newVal);
+            } else {
+              // 数量输入
+              const isJustSwitched = String(currentItem.value) === displayValue;
+              let newDisplay;
+              if (digit === '00') {
+                newDisplay = (displayValue === '0' || isJustSwitched) ? '0' : displayValue + '00';
+              } else {
+                newDisplay = (displayValue === '0' || isJustSwitched) ? String(digit) : displayValue + digit;
+              }
+              setDisplayValue(newDisplay);
+              setCurrentItem(prev => ({ ...prev, count: parseInt(newDisplay) || 0 }));
+            }
+          };
+
+          const updateCurrentItemValue = (valStr) => {
+            setCurrentItem(prev => ({ ...prev, value: valStr, isPreset: false })); 
+            setDisplayValue(valStr);
+          };
+
+          const inputPreset = (product) => {
+            if (navigator.vibrate) navigator.vibrate(50);
+            if (mode === 'change') fullReset();
+
+            if (stage === 'input_quantity' || (currentItem.value !== '0' && !currentItem.isPreset) || currentItem.isPreset) {
+              commitCurrentItem();
+            }
+
+            // 使用 product ID 作为 value 的标识，但在计算时使用 price
+            // 为了简化逻辑，我们在 cart item 里存储 { value: price, id: product.id, ... }
+            setCurrentItem({ value: String(product.price), id: product.id, count: 1, isPreset: true });
+            setDisplayValue(String(product.price));
+            setStage('input_value');
+          };
+
+          const performOperation = (op) => {
+            if (mode !== 'calculating') return;
+            if (op === '×') {
+              setStage('input_quantity');
+            } else if (op === '+' || op === '-') {
+              commitCurrentItem();
+              setDisplayValue('0');
+            }
+          };
+
+          const commitCurrentItem = () => {
+            const val = parseFloat(currentItem.value);
+            const count = currentItem.count;
+            if (val === 0) return;
+
+            const newItem = { ...currentItem, value: val }; 
+            const newCart = [...cartItems, newItem];
+            setCartItems(newCart);
+
+            const itemStr = newItem.isPreset ? 
+               (count > 1 ? `${val}×${count}` : `${val}`) : 
+               (count > 1 ? `${val}×${count}` : `${val}`); // Manual input
+            
+            setExpression(prev => prev ? `${prev} + ${itemStr}` : itemStr);
+            setCurrentItem({ value: '0', count: 1, isPreset: false });
+            setStage('input_value');
+          };
+
+          const handleEqual = () => {
+            let finalCart = [...cartItems];
+            if (parseFloat(currentItem.value) !== 0) {
+              finalCart.push({ ...currentItem, value: parseFloat(currentItem.value) });
+            }
+            if (finalCart.length === 0) return;
+
+            const total = finalCart.reduce((acc, item) => acc + (item.value * item.count), 0);
+
+            setCartItems([]); 
+            setCurrentItem({ value: String(total), count: 1, isPreset: false });
+            setStage('input_value');
+            setDisplayValue(String(formatNumber(total)));
+            
+            const fullExp = finalCart.map(item => item.count > 1 ? `${item.value}×${item.count}` : item.value).join(' + ');
+            setExpression(`${fullExp} =`);
+            updateCountsFromCart(finalCart);
+          };
+
+          const updateCountsFromCart = (cart) => {
+            setCounts(prevCounts => {
+              const newCounts = { ...prevCounts };
+              cart.forEach(item => {
+                if (item.isPreset && item.id !== undefined) {
+                   newCounts[item.id] = (newCounts[item.id] || 0) + item.count;
+                }
+              });
+              return newCounts;
+            });
+          };
+
+          const multiplyBy1Point1 = () => {
+            let finalCart = [...cartItems];
+            if (parseFloat(currentItem.value) !== 0) {
+              finalCart.push({ ...currentItem, value: parseFloat(currentItem.value) });
+            }
+
+            let baseTotal = 0;
+            if (finalCart.length > 0) {
+              updateCountsFromCart(finalCart);
+              baseTotal = finalCart.reduce((acc, item) => acc + (item.value * item.count), 0);
+              const fullExp = finalCart.map(item => item.count > 1 ? `${item.value}×${item.count}` : item.value).join(' + ');
+              setExpression(`(${fullExp}) × 1.1`);
+              setCartItems([]);
+            } else {
+              baseTotal = parseFloat(displayValue);
+              setExpression(prev => prev ? `(${prev}) × 1.1` : `× 1.1`);
+            }
+
+            if (baseTotal === 0) return;
+            const newVal = baseTotal * 1.1;
+            setDisplayValue(String(formatNumber(newVal)));
+            setCurrentItem({ value: String(newVal), count: 1, isPreset: false });
+          };
+
+          const handlePayment = () => {
+            let total = parseFloat(displayValue);
+            const hasRawItems = cartItems.length > 0 || currentItem.isPreset;
+
+            if (hasRawItems) {
+               let finalCart = [...cartItems];
+               if (parseFloat(currentItem.value) !== 0) {
+                  finalCart.push({ ...currentItem, value: parseFloat(currentItem.value) });
+               }
+               updateCountsFromCart(finalCart);
+               total = finalCart.reduce((acc, item) => acc + (item.value * item.count), 0);
+            } 
+
+            if (total === 0) return;
+            setFinalTotal(total);
+            setMode('paying');
+            setDisplayValue('0');
+            setCurrentItem({ value: '0', count: 1, isPreset: false });
+            setExpression(`${t.receivable}: ${formatNumber(total)} | ${t.inputReceived}`);
+          };
+
+          const confirmPayment = () => {
+            const received = parseFloat(displayValue);
+            setReceivedAmount(received);
+            const change = received - finalTotal;
+            setDisplayValue(String(formatNumber(change)));
+            setMode('change');
+            setExpression(`${t.total}: ${formatNumber(finalTotal)} | ${t.received}: ${received}`);
+          };
+
+          const handleRecord = () => {
+            const now = new Date();
+            const timeStr = now.toTimeString().split(' ')[0];
+            const newRecord = {
+              id: Date.now(),
+              time: timeStr,
+              counts: { ...counts },
+              total: finalTotal,
+              received: receivedAmount
+            };
+            setHistoryLog([newRecord, ...historyLog]);
+            if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+            fullReset();
+          };
+
+          const fullReset = () => {
+            setCartItems([]);
+            setCurrentItem({ value: '0', count: 1, isPreset: false });
+            setStage('input_value');
+            setDisplayValue('0');
+            setExpression('');
+            setMode('calculating');
+            setFinalTotal(null);
+            setReceivedAmount(null);
+            const resetCounts = {};
+            products.forEach(p => resetCounts[p.id] = 0);
+            setCounts(resetCounts);
+          };
+          
+          const deleteLast = () => {
+            if (mode === 'change') return;
+            if (displayValue.length > 1) {
+              const newVal = displayValue.slice(0, -1);
+              setDisplayValue(newVal);
+              if (stage === 'input_value') setCurrentItem(prev => ({...prev, value: newVal}));
+              else setCurrentItem(prev => ({...prev, count: parseInt(newVal) || 0}));
+            } else {
+              setDisplayValue('0');
+              if (stage === 'input_value') setCurrentItem(prev => ({...prev, value: '0'}));
+              else setCurrentItem(prev => ({...prev, count: 0}));
+            }
+          };
+
+          const downloadCSV = () => {
+            // 动态生成 Header
+            let header = "time";
+            products.forEach((p, idx) => {
+                header += `,${t.colors[idx]}(${p.price})`;
+            });
+            header += ",total,received\n";
+
+            const rows = historyLog.map(item => {
+              let row = `${item.time}`;
+              products.forEach(p => {
+                  row += `,${item.counts[p.id] || 0}`;
+              });
+              row += `,${item.total},${item.received}`;
+              return row;
+            }).join("\n");
+            
+            const csvContent = "data:text/csv;charset=utf-8," + encodeURI(header + rows);
+            const link = document.createElement("a");
+            link.setAttribute("href", csvContent);
+            link.setAttribute("download", `sales_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          };
+
+          const Button = ({ label, onClick, className = "", colorClass = "bg-gray-100 text-gray-800 active:bg-gray-200" }) => (
+            <button
+              onClick={onClick}
+              className={`
+                h-14 sm:h-16 rounded-xl sm:rounded-2xl text-lg sm:text-xl font-semibold shadow-sm transition-all transform active:scale-95 flex items-center justify-center select-none relative
+                ${colorClass} ${className}
+              `}
+            >
+              {label}
+            </button>
+          );
+
+          // --- 渲染设置界面 ---
+          if (appState === 'setup') {
+              return (
+                <div className="flex items-center justify-center min-h-screen p-4">
+                    <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 fade-in flex flex-col gap-6">
+                        <h1 className="text-2xl font-bold text-gray-800 text-center">{t.setupTitle}</h1>
+                        
+                        {/* 语言选择 */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-500 mb-2">{t.selectLang}</label>
+                            <div className="grid grid-cols-3 gap-2">
+                                <button onClick={() => setLang('zh')} className={`py-2 rounded-lg ${lang==='zh' ? 'bg-indigo-600 text-white' : 'bg-gray-100'}`}>中文</button>
+                                <button onClick={() => setLang('ja')} className={`py-2 rounded-lg ${lang==='ja' ? 'bg-indigo-600 text-white' : 'bg-gray-100'}`}>日本語</button>
+                                <button onClick={() => setLang('en')} className={`py-2 rounded-lg ${lang==='en' ? 'bg-indigo-600 text-white' : 'bg-gray-100'}`}>English</button>
+                            </div>
+                        </div>
+
+                        {/* 商品数量 */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-500 mb-2">{t.prodCount}: <span className="text-indigo-600 font-bold text-lg">{customProdCount}</span></label>
+                            <input 
+                                type="range" min="0" max="5" step="1" 
+                                value={customProdCount} 
+                                onChange={(e) => handleProductCountChange(parseInt(e.target.value))}
+                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                            />
+                        </div>
+
+                        {/* 价格设置 */}
+                        {customProdCount > 0 && (
+                            <div className="space-y-3">
+                                <label className="block text-sm font-medium text-gray-500">{t.setPrice}</label>
+                                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                                    {products.map((p, idx) => (
+                                        <div key={idx} className="flex items-center gap-3">
+                                            <div className={`w-8 h-8 rounded-full ${colorDefs[idx].bg} border ${colorDefs[idx].border}`}></div>
+                                            <span className="text-sm w-12">{t.colors[idx]}</span>
+                                            <input 
+                                                type="number" 
+                                                value={p.price} 
+                                                onChange={(e) => handlePriceChange(idx, e.target.value)}
+                                                className="flex-1 border rounded-lg px-3 py-2 text-right font-mono"
+                                                placeholder="Price"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <button 
+                            onClick={startCalculator}
+                            className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-transform mt-2"
+                        >
+                            {t.start}
+                        </button>
+                    </div>
+                </div>
+              );
+          }
+
+          // --- 渲染计算器界面 ---
+          return (
+            <div className="flex items-center justify-center font-sans touch-manipulation min-h-screen">
+              <div className="w-full max-w-md bg-white h-screen sm:h-auto sm:min-h-[800px] sm:rounded-3xl sm:shadow-2xl overflow-hidden flex flex-col relative fade-in">
+                
+                {/* 顶部状态栏 */}
+                <div className="bg-gray-900 text-gray-300 px-4 pt-12 pb-2 sm:pt-2 flex justify-between items-center text-xs sm:text-sm">
+                  <div className="flex gap-2">
+                     <button onClick={() => setShowHistoryModal(true)} className="flex items-center gap-1 hover:text-white transition-colors">
+                        <IconFileText size={16} /> {t.viewRecord}
+                     </button>
+                     <button onClick={() => setAppState('setup')} className="flex items-center gap-1 hover:text-white transition-colors ml-2">
+                        <IconSettings size={16} />
+                     </button>
+                  </div>
+                  <div className="flex gap-2">
+                    {/* 实时计数预览 */}
+                    {(() => {
+                      const previewCounts = { ...counts };
+                      cartItems.forEach(item => { if(item.isPreset && item.id !== undefined) previewCounts[item.id] = (previewCounts[item.id]||0) + item.count; });
+                      if(currentItem.isPreset && currentItem.id !== undefined) previewCounts[currentItem.id] = (previewCounts[currentItem.id]||0) + currentItem.count;
+                      
+                      return products.map((p, idx) => previewCounts[p.id] > 0 && (
+                        <span key={p.id} className={`px-1.5 py-0.5 rounded text-[10px] ${colorDefs[idx].bg} ${colorDefs[idx].text}`}>
+                          {previewCounts[p.id]}
+                        </span>
+                      ));
+                    })()}
+                  </div>
+                </div>
+
+                {/* 屏幕 */}
+                <div className="bg-gray-900 text-white p-6 pt-2 flex flex-col justify-end h-40 relative">
+                  <div className="text-gray-400 text-right text-sm min-h-[1.5rem] mb-1 break-words leading-tight">
+                    {expression}
+                    {currentItem.value !== '0' && stage === 'input_value' && cartItems.length > 0 && ` + ${currentItem.value}`}
+                    {stage === 'input_quantity' && ` × ${currentItem.count}`}
+                  </div>
+                  <div className="flex justify-between items-end">
+                    <div className="text-xs text-indigo-400 font-bold mb-2">
+                       {mode === 'paying' ? t.received : mode === 'change' ? t.change : t.currInput}
+                    </div>
+                    <div className="text-right text-5xl font-light tracking-wide break-all">
+                      {displayValue}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 键盘区域 - 动态布局 */}
+                <div className="flex-1 p-3 bg-gray-50 pb-8 sm:pb-4 flex flex-col gap-2">
+                  
+                  {/* 自定义商品区域 + 功能键 (自动网格) */}
+                  <div className="grid grid-cols-4 gap-2">
+                      {/* 商品按钮 */}
+                      {products.map((p, idx) => (
+                          <Button 
+                            key={p.id} 
+                            label={p.price} 
+                            onClick={() => inputPreset(p)} 
+                            colorClass={`${colorDefs[idx].bg} ${colorDefs[idx].text} active:bg-gray-50 border ${colorDefs[idx].border}`} 
+                          />
+                      ))}
+                      
+                      {/* 功能按钮：填充剩余空间或新起一行 */}
+                      <Button label="x1.1" onClick={multiplyBy1Point1} colorClass="bg-teal-600 text-white active:bg-teal-700 font-bold" />
+                      <Button label={<IconRotateCcw size={20}/>} onClick={fullReset} colorClass="bg-gray-200 text-red-600 active:bg-gray-300" />
+                      <Button label={<IconDelete size={20}/>} onClick={deleteLast} colorClass="bg-gray-200 text-gray-700 active:bg-gray-300" />
+                  </div>
+
+                  <hr className="border-gray-200 my-1"/>
+
+                  {/* 数字键盘固定布局 */}
+                  <div className="grid grid-cols-4 gap-2 flex-1">
+                      <Button label="7" onClick={() => inputDigit(7)} colorClass="bg-white text-gray-900 shadow-sm border border-gray-100" />
+                      <Button label="8" onClick={() => inputDigit(8)} colorClass="bg-white text-gray-900 shadow-sm border border-gray-100" />
+                      <Button label="9" onClick={() => inputDigit(9)} colorClass="bg-white text-gray-900 shadow-sm border border-gray-100" />
+                      <Button label={t.received} onClick={handlePayment} colorClass="bg-emerald-600 text-white font-bold text-lg active:bg-emerald-700 shadow-sm" />
+
+                      <Button label="4" onClick={() => inputDigit(4)} colorClass="bg-white text-gray-900 shadow-sm border border-gray-100" />
+                      <Button label="5" onClick={() => inputDigit(5)} colorClass="bg-white text-gray-900 shadow-sm border border-gray-100" />
+                      <Button label="6" onClick={() => inputDigit(6)} colorClass="bg-white text-gray-900 shadow-sm border border-gray-100" />
+                      <Button label="×" onClick={() => performOperation('×')} colorClass="bg-indigo-50 text-indigo-600 font-bold text-xl" />
+
+                      <Button label="1" onClick={() => inputDigit(1)} colorClass="bg-white text-gray-900 shadow-sm border border-gray-100" />
+                      <Button label="2" onClick={() => inputDigit(2)} colorClass="bg-white text-gray-900 shadow-sm border border-gray-100" />
+                      <Button label="3" onClick={() => inputDigit(3)} colorClass="bg-white text-gray-900 shadow-sm border border-gray-100" />
+                      <Button label="+" onClick={() => performOperation('+')} colorClass="bg-indigo-50 text-indigo-600 font-bold text-xl" />
+
+                      <Button label="0" onClick={() => inputDigit(0)} colorClass="bg-white text-gray-900 shadow-sm border border-gray-100" />
+                      <Button label="00" onClick={() => inputDigit('00')} colorClass="bg-white text-gray-900 shadow-sm border border-gray-100 font-bold" />
+                      
+                      {mode === 'change' ? (
+                         <Button label={<div className="flex items-center gap-1"><IconSave size={18}/> {t.record}</div>} onClick={handleRecord} colorClass="bg-gray-800 text-white text-sm sm:text-lg active:bg-black shadow-lg" />
+                      ) : mode === 'paying' ? (
+                         <Button label="=" onClick={confirmPayment} colorClass="bg-blue-600 text-white text-2xl active:bg-blue-700 shadow-lg" />
+                      ) : (
+                         <Button label="=" onClick={handleEqual} colorClass="bg-blue-600 text-white text-2xl active:bg-blue-700 shadow-lg" />
+                      )}
+
+                      <Button label="+" onClick={() => performOperation('+')} colorClass="bg-indigo-50 text-indigo-600 font-bold text-xl" />
+                  </div>
+                </div>
+
+                {/* 历史记录模态框 */}
+                {showHistoryModal && (
+                  <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex justify-end">
+                    <div className="w-4/5 sm:w-2/3 bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+                      <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+                        <h2 className="font-bold text-lg text-gray-800">{t.historyTitle}</h2>
+                        <button onClick={() => setShowHistoryModal(false)} className="p-2 bg-gray-200 rounded-full hover:bg-gray-300">
+                          <IconX size={20} />
+                        </button>
+                      </div>
+                      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                        {historyLog.length === 0 ? <div className="text-center text-gray-400 mt-10">{t.noRecord}</div> : historyLog.map((log) => (
+                          <div key={log.id} className="bg-white border rounded-xl p-3 shadow-sm text-sm">
+                            <div className="flex justify-between mb-2">
+                              <span className="font-bold text-gray-700">{log.time}</span>
+                              <span className="font-mono font-bold text-indigo-600">¥{formatNumber(log.total)}</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1 mb-2">
+                              {products.map((p, idx) => log.counts[p.id] > 0 && (
+                                <span key={p.id} className={`text-[10px] px-1.5 rounded ${colorDefs[idx].bg} ${colorDefs[idx].text}`}>{p.price}×{log.counts[p.id]}</span>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="p-4 border-t bg-gray-50">
+                        <button onClick={downloadCSV} className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 active:bg-indigo-700">
+                          <IconDownload size={20} /> {t.download}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
