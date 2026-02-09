@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>POS Calculator</title>
+    <title>智能收银计算器</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 React 和 ReactDOM -->
@@ -36,6 +36,14 @@
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+        /* 模态框动画 */
+        .modal-enter {
+            animation: modalPop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
         }
     </style>
 </head>
@@ -68,6 +76,20 @@
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
         );
 
+        // --- 颜色配置库 ---
+        const COLOR_PALETTE = [
+            { id: 'red', bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
+            { id: 'orange', bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200' },
+            { id: 'yellow', bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-200' },
+            { id: 'green', bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200' },
+            { id: 'teal', bg: 'bg-teal-100', text: 'text-teal-700', border: 'border-teal-200' },
+            { id: 'blue', bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200' },
+            { id: 'indigo', bg: 'bg-indigo-100', text: 'text-indigo-700', border: 'border-indigo-200' },
+            { id: 'purple', bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-200' },
+            { id: 'pink', bg: 'bg-pink-100', text: 'text-pink-700', border: 'border-pink-200' },
+            { id: 'gray', bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-200' }
+        ];
+
         // --- 多语言配置 ---
         const translations = {
             zh: {
@@ -85,12 +107,18 @@
                 setupTitle: "初始化设置",
                 selectLang: "选择语言",
                 prodCount: "自定义商品数量",
-                setPrice: "设置价格",
+                setPrice: "设置价格与颜色",
                 start: "开始使用",
-                colors: ["红色", "橙色", "绿色", "蓝色", "紫色"],
                 historyTitle: "交易记录",
                 price: "价格",
-                resetSetup: "重置设置"
+                resetSetup: "重置设置",
+                tapChangeColor: "点击颜色图标更改",
+                selectColorTitle: "选择颜色",
+                cancel: "取消",
+                colors: {
+                    red: "红色", orange: "橙色", yellow: "黄色", green: "绿色", teal: "青色",
+                    blue: "蓝色", indigo: "靛色", purple: "紫色", pink: "粉色", gray: "灰色"
+                }
             },
             ja: {
                 title: "スマートレジ電卓",
@@ -107,12 +135,18 @@
                 setupTitle: "初期設定",
                 selectLang: "言語選択",
                 prodCount: "商品ボタン数",
-                setPrice: "価格設定",
+                setPrice: "価格と色設定",
                 start: "開始",
-                colors: ["赤", "オレンジ", "緑", "青", "紫"],
                 historyTitle: "取引履歴",
                 price: "価格",
-                resetSetup: "設定リセット"
+                resetSetup: "設定リセット",
+                tapChangeColor: "色アイコンをタップして変更",
+                selectColorTitle: "色を選択",
+                cancel: "キャンセル",
+                colors: {
+                    red: "赤", orange: "オレンジ", yellow: "黄", green: "緑", teal: "ティール",
+                    blue: "青", indigo: "藍", purple: "紫", pink: "ピンク", gray: "グレー"
+                }
             },
             en: {
                 title: "Smart POS Calc",
@@ -129,33 +163,38 @@
                 setupTitle: "Setup",
                 selectLang: "Language",
                 prodCount: "Product Buttons",
-                setPrice: "Set Prices",
+                setPrice: "Set Prices & Colors",
                 start: "Start",
-                colors: ["Red", "Orange", "Green", "Blue", "Purple"],
                 historyTitle: "History",
                 price: "Price",
-                resetSetup: "Reset"
+                resetSetup: "Reset",
+                tapChangeColor: "Tap color icon to change",
+                selectColorTitle: "Select Color",
+                cancel: "Cancel",
+                colors: {
+                    red: "Red", orange: "Orange", yellow: "Yellow", green: "Green", teal: "Teal",
+                    blue: "Blue", indigo: "Indigo", purple: "Purple", pink: "Pink", gray: "Gray"
+                }
             }
         };
-
-        const colorDefs = [
-            { name: 'red', bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
-            { name: 'orange', bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200' },
-            { name: 'green', bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200' },
-            { name: 'blue', bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200' },
-            { name: 'purple', bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-200' }
-        ];
 
         function App() {
           // --- 全局状态 ---
           const [appState, setAppState] = useState('setup'); // 'setup' | 'calculator'
           const [lang, setLang] = useState('zh');
           
-          // 配置状态
+          // 配置状态：每个商品包含 id, price, colorIdx
           const [customProdCount, setCustomProdCount] = useState(5);
           const [products, setProducts] = useState([
-              { id: 0, price: 100 }, { id: 1, price: 200 }, { id: 2, price: 300 }, { id: 3, price: 400 }, { id: 4, price: 500 }
+              { id: 0, price: 100, colorIdx: 0 }, 
+              { id: 1, price: 200, colorIdx: 1 }, 
+              { id: 2, price: 300, colorIdx: 3 }, // Green
+              { id: 3, price: 400, colorIdx: 5 }, // Blue
+              { id: 4, price: 500, colorIdx: 7 }  // Purple
           ]);
+          
+          // 颜色选择器状态 (用于设置界面)
+          const [activeColorPickerIndex, setActiveColorPickerIndex] = useState(null);
 
           // --- 计算器核心状态 ---
           const [cartItems, setCartItems] = useState([]);
@@ -178,15 +217,17 @@
 
           // 辅助函数
           const formatNumber = (num) => parseFloat(parseFloat(num).toPrecision(12)).toString();
+          const getColor = (idx) => COLOR_PALETTE[idx % COLOR_PALETTE.length];
 
           // --- 设置页面逻辑 ---
           const handleProductCountChange = (count) => {
               setCustomProdCount(count);
-              // 调整 products 数组长度，保留已有价格
+              // 调整 products 数组长度，保留已有设置
               setProducts(prev => {
                   const newProds = [];
                   for(let i=0; i<count; i++) {
-                      newProds.push(prev[i] || { id: i, price: (i+1)*100 });
+                      // 如果之前有配置，沿用；否则生成新的，颜色轮询
+                      newProds.push(prev[i] || { id: i, price: (i+1)*100, colorIdx: i % COLOR_PALETTE.length });
                   }
                   return newProds;
               });
@@ -196,6 +237,16 @@
               const newProds = [...products];
               newProds[index].price = parseFloat(newPrice) || 0;
               setProducts(newProds);
+          };
+
+          const handleColorSelect = (colorPaletteIndex) => {
+              if (activeColorPickerIndex === null) return;
+              setProducts(prev => {
+                  const newProds = [...prev];
+                  newProds[activeColorPickerIndex].colorIdx = colorPaletteIndex;
+                  return newProds;
+              });
+              setActiveColorPickerIndex(null);
           };
 
           const startCalculator = () => {
@@ -251,8 +302,6 @@
               commitCurrentItem();
             }
 
-            // 使用 product ID 作为 value 的标识，但在计算时使用 price
-            // 为了简化逻辑，我们在 cart item 里存储 { value: price, id: product.id, ... }
             setCurrentItem({ value: String(product.price), id: product.id, count: 1, isPreset: true });
             setDisplayValue(String(product.price));
             setStage('input_value');
@@ -279,7 +328,7 @@
 
             const itemStr = newItem.isPreset ? 
                (count > 1 ? `${val}×${count}` : `${val}`) : 
-               (count > 1 ? `${val}×${count}` : `${val}`); // Manual input
+               (count > 1 ? `${val}×${count}` : `${val}`); 
             
             setExpression(prev => prev ? `${prev} + ${itemStr}` : itemStr);
             setCurrentItem({ value: '0', count: 1, isPreset: false });
@@ -415,10 +464,11 @@
           };
 
           const downloadCSV = () => {
-            // 动态生成 Header
+            // 动态生成 Header, 使用当前颜色名称
             let header = "time";
             products.forEach((p, idx) => {
-                header += `,${t.colors[idx]}(${p.price})`;
+                const colorName = t.colors[getColor(p.colorIdx).id];
+                header += `,${colorName}(${p.price})`;
             });
             header += ",total,received\n";
 
@@ -455,7 +505,7 @@
           // --- 渲染设置界面 ---
           if (appState === 'setup') {
               return (
-                <div className="flex items-center justify-center min-h-screen p-4">
+                <div className="flex items-center justify-center min-h-screen p-4 relative">
                     <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 fade-in flex flex-col gap-6">
                         <h1 className="text-2xl font-bold text-gray-800 text-center">{t.setupTitle}</h1>
                         
@@ -480,24 +530,34 @@
                             />
                         </div>
 
-                        {/* 价格设置 */}
+                        {/* 价格与颜色设置 */}
                         {customProdCount > 0 && (
                             <div className="space-y-3">
-                                <label className="block text-sm font-medium text-gray-500">{t.setPrice}</label>
+                                <label className="block text-sm font-medium text-gray-500 flex justify-between">
+                                    <span>{t.setPrice}</span>
+                                    <span className="text-xs text-indigo-500 font-normal">{t.tapChangeColor}</span>
+                                </label>
                                 <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                                    {products.map((p, idx) => (
-                                        <div key={idx} className="flex items-center gap-3">
-                                            <div className={`w-8 h-8 rounded-full ${colorDefs[idx].bg} border ${colorDefs[idx].border}`}></div>
-                                            <span className="text-sm w-12">{t.colors[idx]}</span>
-                                            <input 
-                                                type="number" 
-                                                value={p.price} 
-                                                onChange={(e) => handlePriceChange(idx, e.target.value)}
-                                                className="flex-1 border rounded-lg px-3 py-2 text-right font-mono"
-                                                placeholder="Price"
-                                            />
-                                        </div>
-                                    ))}
+                                    {products.map((p, idx) => {
+                                        const color = getColor(p.colorIdx);
+                                        return (
+                                            <div key={idx} className="flex items-center gap-3">
+                                                <button 
+                                                    onClick={() => setActiveColorPickerIndex(idx)}
+                                                    className={`w-8 h-8 rounded-full shadow-sm ${color.bg} border-2 ${color.border} flex-shrink-0 transition-transform active:scale-90`}
+                                                    aria-label="Change color"
+                                                ></button>
+                                                <span className="text-sm w-12 truncate text-gray-600">{t.colors[color.id]}</span>
+                                                <input 
+                                                    type="number" 
+                                                    value={p.price} 
+                                                    onChange={(e) => handlePriceChange(idx, e.target.value)}
+                                                    className="flex-1 border rounded-lg px-3 py-2 text-right font-mono"
+                                                    placeholder="Price"
+                                                />
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}
@@ -509,6 +569,33 @@
                             {t.start}
                         </button>
                     </div>
+
+                    {/* 颜色选择模态框 */}
+                    {activeColorPickerIndex !== null && (
+                        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 fade-in backdrop-blur-sm" onClick={() => setActiveColorPickerIndex(null)}>
+                            <div className="bg-white rounded-2xl p-6 w-full max-w-sm modal-enter shadow-2xl" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-lg font-bold mb-4 text-center text-gray-800">{t.selectColorTitle}</h3>
+                                <div className="grid grid-cols-5 gap-3">
+                                    {COLOR_PALETTE.map((c, idx) => (
+                                        <button
+                                            key={c.id}
+                                            onClick={() => handleColorSelect(idx)}
+                                            className="flex flex-col items-center gap-1 p-1 hover:bg-gray-50 rounded-lg"
+                                        >
+                                            <div className={`w-10 h-10 rounded-full ${c.bg} border-2 ${c.border} shadow-sm`}></div>
+                                            <span className="text-[10px] text-gray-500">{t.colors[c.id]}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                                <button 
+                                    onClick={() => setActiveColorPickerIndex(null)}
+                                    className="mt-6 w-full py-2 bg-gray-100 text-gray-600 rounded-xl font-medium active:bg-gray-200"
+                                >
+                                    {t.cancel}
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
               );
           }
@@ -536,7 +623,7 @@
                       if(currentItem.isPreset && currentItem.id !== undefined) previewCounts[currentItem.id] = (previewCounts[currentItem.id]||0) + currentItem.count;
                       
                       return products.map((p, idx) => previewCounts[p.id] > 0 && (
-                        <span key={p.id} className={`px-1.5 py-0.5 rounded text-[10px] ${colorDefs[idx].bg} ${colorDefs[idx].text}`}>
+                        <span key={p.id} className={`px-1.5 py-0.5 rounded text-[10px] ${getColor(p.colorIdx).bg} ${getColor(p.colorIdx).text}`}>
                           {previewCounts[p.id]}
                         </span>
                       ));
@@ -567,14 +654,17 @@
                   {/* 自定义商品区域 + 功能键 (自动网格) */}
                   <div className="grid grid-cols-4 gap-2">
                       {/* 商品按钮 */}
-                      {products.map((p, idx) => (
-                          <Button 
-                            key={p.id} 
-                            label={p.price} 
-                            onClick={() => inputPreset(p)} 
-                            colorClass={`${colorDefs[idx].bg} ${colorDefs[idx].text} active:bg-gray-50 border ${colorDefs[idx].border}`} 
-                          />
-                      ))}
+                      {products.map((p, idx) => {
+                          const color = getColor(p.colorIdx);
+                          return (
+                              <Button 
+                                key={p.id} 
+                                label={p.price} 
+                                onClick={() => inputPreset(p)} 
+                                colorClass={`${color.bg} ${color.text} active:bg-gray-50 border ${color.border}`} 
+                              />
+                          );
+                      })}
                       
                       {/* 功能按钮：填充剩余空间或新起一行 */}
                       <Button label="x1.1" onClick={multiplyBy1Point1} colorClass="bg-teal-600 text-white active:bg-teal-700 font-bold" />
@@ -634,9 +724,14 @@
                               <span className="font-mono font-bold text-indigo-600">¥{formatNumber(log.total)}</span>
                             </div>
                             <div className="flex flex-wrap gap-1 mb-2">
-                              {products.map((p, idx) => log.counts[p.id] > 0 && (
-                                <span key={p.id} className={`text-[10px] px-1.5 rounded ${colorDefs[idx].bg} ${colorDefs[idx].text}`}>{p.price}×{log.counts[p.id]}</span>
-                              ))}
+                              {products.map((p, idx) => {
+                                const count = log.counts[p.id] || 0;
+                                if (count <= 0) return null;
+                                const color = getColor(p.colorIdx);
+                                return (
+                                  <span key={p.id} className={`text-[10px] px-1.5 rounded ${color.bg} ${color.text}`}>{p.price}×{count}</span>
+                                );
+                              })}
                             </div>
                           </div>
                         ))}
